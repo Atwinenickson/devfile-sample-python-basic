@@ -1,16 +1,15 @@
 FROM registry.fedoraproject.org/f33/python3
 
-# Add application sources with correct permissions for OpenShift
-USER 0
-ADD app-src .
-RUN chown -R 1001:0 ./
-USER 1001
+WORKDIR /projects
 
-# Install the dependencies
-RUN pip install -U "pip>=19.3.1" && \
-    pip install -r requirements.txt && \
-    python manage.py collectstatic --noinput && \
-    python manage.py migrate
+RUN python3 -m venv venv
+RUN . venv/bin/activate
 
-# Run the application
-CMD python manage.py runserver 0.0.0.0:8080
+# optimize image caching
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 8081
+CMD [ "waitress-serve", "--port=8081", "app:app"]
